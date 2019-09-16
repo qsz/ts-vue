@@ -1,0 +1,94 @@
+{
+  "name": "ts-simple-vue",
+  "version": "1.0.0",
+  "description": "typescript-simple-vue",
+  "main": "dist/ts-simple-vue.umd.js",
+  "module": "dist/ts-simple-vue.es5.js",
+  "typings": "dist/types/ts-simple-vue.d.ts",
+  "author": "xujunjie <871464310@qq.com>",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "scripts": {
+    "lint": "tslint --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
+    "prebuild": "rimraf dist",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts",
+    "start": "rollup -c rollup.config.ts -w",
+    "example": "parcel example/index.html",
+    "vuee": "parcel example/vuee.html --port 1111",
+    "bundler": "node bundler.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --coverage --watch",
+    "test:prod": "npm run lint && npm run test -- --no-cache"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "@types/jest": "^24.0.15",
+    "@types/node": "^12.6.8",
+    "@vue/babel-helper-vue-jsx-merge-props": "^1.0.0",
+    "@vue/babel-preset-jsx": "^1.1.0",
+    "@vue/component-compiler-utils": "^3.0.0",
+    "jest": "^24.8.0",
+    "jest-config": "^24.8.0",
+    "lodash.camelcase": "^4.3.0",
+    "parcel-bundler": "^1.12.3",
+    "rimraf": "^2.6.3",
+    "rollup": "^1.17.0",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-sourcemaps": "^0.4.2",
+    "rollup-plugin-typescript2": "^0.22.0",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.5.3",
+    "vue-template-compiler": "^2.6.10"
+  },
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/test/"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    },
+    "collectCoverageFrom": [
+      "src/*.{js,ts}"
+    ]
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@babel/core": "^7.5.5",
+    "vue": "^2.6.10",
+    "vue-hot-reload-api": "^2.3.3"
+  },
+  "directories": {
+    "example": "example",
+    "test": "test"
+  }
+}
