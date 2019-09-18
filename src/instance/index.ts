@@ -6,37 +6,46 @@ import { proxy, observe, defineReactive, Observer } from '../observer'
 import Watcher from '../observer/watcher'
 import Dep from '../observer/dep'
 import { noop, nextTick } from '../utils'
+import callHook from './lifecycle'
 
+let vid = 0
+   
 /**
  * 实现构造函数，实例化有两种场景
  * 1.组件初始化
  * 2.实例化Vue对象
  */
-export default class Tsue {
+export default class Tsue{
     [propName: string]: any;
-
+    _vid: number
     _options: VmOptions & ComponentOptions<Tsue> = {};
     _self: Tsue | undefined;
-    _el: string | undefined;
-    _vnode: VNode | undefined;
-    $vnode: VNode | undefined;  // 父vnode
+    _el: string | Node | undefined;
+    _vnode: VNode | undefined;        // 实例vnode
+    $parentVnode: VNode | undefined;  // 父vnode
     _data: any;
+    _isMounted: boolean = false;      // 是否已经挂载到真实DOM上  
 
     constructor(options: VmOptions & ComponentOptions<Tsue>) {
+        this._vid = vid++
         this._init(options)
     }
     /**
      * 初始化方法
      */
     _init(options: VmOptions & ComponentOptions<Tsue>){
-        if(options && options._isComponent) {  
+        if(options && options._isComponent) { 
             // 如果是组件
-            this._options = options;
+            this._options = Object.create(this.constructor.options); // 组件传入的options
+            this._options.parent = options.parent;
+            this._options.parentVnode = options.parentVnode;
         } else {        
             this._options = this._mergeOptions(options);
         }
         this._self = this;
+        callHook(this, 'beforeCreate')
         this._initState()
+        callHook(this, 'created')
         if(this._options.el && document.querySelector(this._options.el)) {  
             this._el = this._options.el;
             this._mount(this._options.el);
@@ -44,40 +53,62 @@ export default class Tsue {
     }
     // 挂载到真实dom上
     _mount(el: string | undefined){
+        callHook(this, 'beforeMount')
         const updateComponent = () => {
             this._update(this._render())
         }
-        const wacther = new Watcher(this, updateComponent, noop, {});
+        const vm = this
+        // Watcher实例化的时候就会执行 updateComponent
+        const wacther = new Watcher(this, updateComponent, noop, {
+            before() {
+                if (vm._isMounted) {
+                    // beforeUpdate 生命周期
+                    callHook(vm, 'beforeUpdate')
+                }
+            }
+        }); 
+        if(!this.$parentVnode) {
+            // 没有$parentVnode 说明是 Tsue实例化
+            this._isMounted = true;
+            callHook(this, 'mounted')
+        }
     }
-    // 把 VNode 渲染成真实的 DOM, 在 首次渲染 或 数据更新 会调用
+    // 把 VNode 渲染成真实的 DOM, 在 首次渲染、组件渲染 或 数据更新 会调用
     _update(vnode: VNode){ 
         const prevVnode = this._vnode;
         this._vnode = vnode;
         if(prevVnode) {  
             // 数据更新  
-            patch(prevVnode, vnode)
+            this._el = patch(prevVnode, vnode)
         } else {   
-            // 首次渲染
-            patch(this._el!, vnode) 
+            if(!this._el) {
+                // 组件渲染
+                this._el = patch(undefined, vnode) 
+            } else if(typeof this._el === 'string') {
+                // 首次渲染
+                this._el = patch(this._el, vnode) 
+            }   
         }
     }
     // 生成vnode
     _render(): VNode{
         const render = this._options.render;
-        const _parentVnode = this._options._parentVnode
-        this.$vnode = _parentVnode;
+        const parentVnode = this._options.parentVnode
+        this.$parentVnode = parentVnode;
         if(!render) {
             return {}
         } 
         const h = (tag: any, attr: any, children: any[]): VNode => {
             return createElement(this, tag, attr, children)
         };
+        // vnode实例
         const vnode: VNode = render.call(this, h);
-        vnode.parent = _parentVnode ;
+        // 组件vnode才会存在parent
+        vnode.parent = parentVnode;
 
         return vnode
     }
-    // 初始化数据
+    // 初始化methods、data、computed、watch数据
     _initState() {
         if(this._options && this._options.methods) {
             this._initMethods(this._options.methods)
@@ -171,17 +202,18 @@ export default class Tsue {
 
     /**
      * 创建子类
+     * @params extendOptions 组件传入的options
      */
     _extend(extendOptions: VmOptions): VueComponentClassStatic {
         const Super = this
-        class Sub extends Tsue {
+        class TsueComponent extends Tsue {
             static super: Tsue = Super
             static options = extendOptions
             constructor(options: ComponentOptions<Tsue>) {
                 super(options)
             }
         }
-        return Sub
+        return TsueComponent
     }
 
     // 合并options

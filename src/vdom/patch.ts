@@ -48,7 +48,10 @@ function updateStyle(vnode: VNode) {
     }
 }
 
-
+/**
+ * 格式化css属性
+ * @param cssText 
+ */
 const parseStyleText = function (cssText: string) {
     const res = Object.create(null);
     const listDelimiter = /;(?![^(]*\))/g;
@@ -80,25 +83,38 @@ function updateListeners(vnode: VNode) {
 }
 
 /**
- * 
- * @param oldVnode vnode or dom节点
+ * 渲染并挂载DOM
+ * @param oldVnode
  * @param vnode 
  */
-export default function patch(oldVnode: VNode | string, vnode: VNode) {
+export default function patch(oldVnode: VNode | string | undefined, vnode: VNode) {
     if(typeof oldVnode === 'string') {
         // 如果是dom节点，说明是初始化，首次渲染，转化为vnode
         const reallyDom = document.querySelector(oldVnode);
-        oldVnode = new VNode(reallyDom!.tagName, {}, [], undefined, reallyDom!)
-        createElm(oldVnode.element!, vnode)
-    } else {
-        const parentNode = getParentNode(oldVnode.element!)
-        if(parentNode) {
-            (parentNode as Element).innerHTML = ''
-            createElm(parentNode, vnode)
-        } else {
-            createElm(undefined, vnode)
+        if(reallyDom) {
+            oldVnode = new VNode(reallyDom.tagName, {}, [], undefined, reallyDom)
+            createElm(vnode, oldVnode.element)
         }
+    } else {
+        if(oldVnode && oldVnode.element) {
+            // 数据更新
+            const parentNode = getParentNode(oldVnode.element)
+            if(parentNode) {
+                parentNode.removeChild(oldVnode.element)
+                createElm(vnode, parentNode)
+            } else {
+                createElm(vnode, undefined)
+            }
+        } else {
+            // 组件实例首次渲染
+            createElm(vnode)
+            // 组件DOM的vnode渲染完成后执行mounted钩子
+            if(vnode.parent && vnode.parent.data && vnode.parent.data.hook) {
+                vnode.parent.data.hook.mounted(vnode.parent)
+            }
+        }   
     }
+    return vnode.element
 }
 
 /**
@@ -106,11 +122,10 @@ export default function patch(oldVnode: VNode | string, vnode: VNode) {
  * @param parentNode 
  * @param vnode 
  */
-export function createElm(parentElem: Node | undefined, vnode: VNode) {
-    console.log(parentElem, vnode)
-    // 创建子组件
-    if (createComponent(vnode, parentElem)) {
-        return
+export function createElm(vnode: VNode, parentElem?: Node | undefined) {
+    if (patchCreateComponent(vnode, parentElem)) {
+        // 判断是否是组件，是则不进行后续操作
+        return;
     }
     if(vnode.tag) {
         vnode.element = document.createElement(vnode.tag!);
@@ -127,11 +142,26 @@ export function createElm(parentElem: Node | undefined, vnode: VNode) {
     }
 }
 
-function createComponent(vnode: VNode, parentElem: Node | undefined): boolean {
-    if(vnode.data && vnode.data.hook) {
-        const init = vnode.data.hook.init;
-        if(init) {
-            init(vnode)
+/**
+ * 判断是否是组件vnode，是则创建组件tsue实例
+ * @param vnode 
+ * @param parentElem 
+ */
+function patchCreateComponent(vnode: VNode, parentElem: Node | undefined): boolean {
+    if(vnode.data) {
+        if(vnode.data.hook) {
+            const init = vnode.data.hook.init;
+            if(init) {   
+                // 有init钩子，说明是组件，则执行init钩子
+                init(vnode)
+            }
+        }
+        if(vnode.componentInstance && (typeof vnode.componentInstance._el !== 'string')) {
+            vnode.element = vnode.componentInstance._el
+            if(vnode.element) {
+                parentElem && vnode && parentElem.appendChild(vnode.element)
+            }
+            return true  
         }
     }
     return false;
@@ -143,7 +173,7 @@ function createComponent(vnode: VNode, parentElem: Node | undefined): boolean {
 function createChildren(vnode: VNode, children: VNode[] | undefined) {
     if(Array.isArray(children)) {
         children.forEach((v) => {
-            createElm(vnode.element!, v)
+            createElm(v, vnode.element)
         })
     }
 }

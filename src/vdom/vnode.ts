@@ -15,9 +15,9 @@ export default class VNode {
     element?: Node | undefined;
     context?: Tsue | undefined;
     key?: string;
-    parent?: VNode | undefined; // 父vnode
-    componentOptions?: VNodeComponentOptions | void;
-    componentInstance?: Tsue;   // 自组件实例
+    parent?: VNode | undefined;                      // 父vnode, 组件下的vnode才有parent
+    componentOptions?: VNodeComponentOptions | void; // 组件option
+    componentInstance?: Tsue;                        // 组件tsue实例
 
     constructor(
         tag?: string,           // 标签
@@ -31,7 +31,7 @@ export default class VNode {
         this.tag = tag;
         this.data = data;
         this.children = children;
-        this.text = String(text);
+        this.text = text ? String(text): undefined;
         this.element = element;
         this.context = context;
         this.key = data && data.key

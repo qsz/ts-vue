@@ -27,12 +27,12 @@ export interface TsVue {
 }
 
 /**
- * 定义子类构造函数
+ * 定义子组件构造函数
  */
 export interface VueComponentClassStatic {
     new (options: ComponentOptions<Tsue>): Tsue;
     super: Tsue
-    options: VmOptions
+    options: VmOptions | null
 }
 
 
@@ -50,12 +50,25 @@ export interface VmOptions {
     computed?: Record<string, Function>;
     render?: Render;
     name?: string;
+
+    // 生命周期函数
+    beforeCreate?: Function;
+    created?: Function;
+    beforeMount?: Function;
+    mounted?: Function;
+    beforeUpdate?: Function;
+    updated?: Function;
+    beforeDestroy?: Function;
+    destroyed?: Function;
 }
+
+export type lifehook = 'beforeCreate' | 'created' | 'beforeMount' | 'mounted' 
+| 'beforeUpdate' | 'updated' | 'beforeDestroy' | 'destroyed';
 
 // 实例化组件时的参数
 export interface ComponentOptions<V extends Tsue> {
     _isComponent?: boolean;           // 是否是组件
-    _parentVnode?: VNode;             // 父组件vnode
+    parentVnode?: VNode;              // 父组件vnode
     parent?: V;                       // 父实例
 }
 

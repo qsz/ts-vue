@@ -1,12 +1,14 @@
 import Dep, { pushTarget, popTarget } from './dep'
 import Tsue from '../instance'
 import { nextTick } from '../utils'
+import callHook from '../instance/lifecycle'
 
 let wid = 0
 interface WatchOptions {
     user?: boolean;
     lazy?: boolean;
-    sync?: boolean
+    sync?: boolean;
+    before?: Function;    // beforeUpdate 钩子
 }
 // 观察者
 export default class Watcher {
@@ -14,9 +16,10 @@ export default class Watcher {
     lazy: boolean;       // 有计算属性的watcher lazy = true
     sync: boolean;       // true： 同步执行回调函数
     getter: Function;
-    vm: Tsue;           // Tsue实例
+    vm: Tsue;            // Tsue实例
     id: number = ++wid;  // watcher唯一id
     cb: Function;        // 回调函数
+    before: Function | undefined;    // beforeUpdate 钩子
     dirty: boolean;
 
     depIds: Set<any> = new Set();    // Watcher关联的Dep实例id数组
@@ -27,7 +30,8 @@ export default class Watcher {
         if (options) {
             this.user = !!options.user       
             this.lazy = !!options.lazy       
-            this.sync = !!options.sync        
+            this.sync = !!options.sync     
+            this.before = options.before
         } else {
             this.user = this.lazy = this.sync = false
         }
@@ -138,9 +142,24 @@ function flushQueue() {
 
     for (let index = 0; index < queue.length; index++) {
         watcher = queue[index]
+        if (watcher.before) {
+            // beforeUpdate 生命周期
+            watcher.before()
+        }
         id = watcher.id
         hasIds.delete(id)
         watcher.run()
+    }
+    const updatedQueue = queue.slice()
+    let i = updatedQueue.length
+    
+    while (i--) {
+        const watcher = queue[i]
+        const vm = watcher.vm
+        if (vm._isMounted) {
+            // updated 生命周期
+            callHook(vm, 'updated')
+        }
     }
 
     // 重置

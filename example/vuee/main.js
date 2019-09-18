@@ -1,21 +1,45 @@
 import Vue from 'vue'; // "module": "dist/vue.runtime.esm.js",
-import app from './app'
+
 
 
 const Welcome = {
     name: 'welcome',
     data() {
         return {
-            name: 'kk'
+            age: 15
         }
     },
-    computed: {
-        name2: function() {
-            return this.name
+    beforeCreate() {
+        console.log('beforeCreate')
+    },
+    created() {
+        console.log('created')
+    },
+    beforeMount() {
+        console.log('beforeMount')
+    },
+    mounted() {
+        console.log('mounted')
+    },
+    beforeUpdate() {
+        console.log(this.age, 'beforeUpdate')
+    },
+    updated() {
+        console.log(this.age, 'updated')
+    },
+    methods: {
+        clickHandler: function() {
+            this.age = this.age + 1
         }
     },
+    
     render(h) {
-        return <h1>Hello <span>{this.name2}</span></h1>;
+        return (
+            <div>
+                <div name='d'  class='d1' style='color:red;' key='ddd' onClick={this.clickHandler}>click to change age</div> 
+                <div>age: {this.age}</div>  
+            </div>
+        );
     }
 }
 
@@ -23,26 +47,14 @@ new Vue({
     el: '#app',
     data: function(){ 
         return {
-            age: 15,
-            form: {}
+            name: 'Tsue'
          }
     },
-  	methods: {
-        clickHandler: function() {
-            this.form.name = 'kkk'
-        }
-    },
-    components: {
-        Welcome: Welcome
-    },
+    
     render(h) {
-      return (
+      return ( 
         <div>
-        	{/* <div name='d'  class='d1' style='color:red;' key='ddd' onClick={this.clickHandler}>click to change name</div>
-            <div>name: {this.form.name || ''}</div>  
-            <my-button></my-button> */}
-            {/* <div>222</div> */}
-            
+            <h1>{this.name}</h1>
             <Welcome></Welcome>
         </div>
       )
