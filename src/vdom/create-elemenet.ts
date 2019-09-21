@@ -23,12 +23,14 @@ function createTextVNode(text: any): VNode {
 function normalizeArrayChildren(children: any[]): any[] {
     let res: any[] = []
     children.forEach((node) => {
-        if(typeof node  === 'string' || typeof node  === 'number') {
-            res.push(createTextVNode(node))
-        } else if(Array.isArray(node)){
-            res = res.concat(normalizeArrayChildren(node))
-        } else {
-            res.push(node)
+        if(node) {
+            if(typeof node  === 'string' || typeof node  === 'number') {
+                res.push(createTextVNode(node))
+            } else if(Array.isArray(node)){
+                res = res.concat(normalizeArrayChildren(node))
+            } else {
+                res.push(node)
+            }
         }
     })
     return res;

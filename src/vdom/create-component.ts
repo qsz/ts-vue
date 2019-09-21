@@ -47,10 +47,16 @@ function installComponentHooks(data: VNodeData, parent: Tsue) {
     }
     hook.mounted = function(vnode: VNode) { // 组件插入完成后执行
         const componentInstance = vnode.componentInstance;
-        if (componentInstance && !componentInstance._isMounted) { // 挂载完成
+        if (componentInstance && !componentInstance._isMounted && !componentInstance._isDestroyed) { // 挂载完成
           componentInstance._isMounted = true;
           // mounted生命周期
           callHook(componentInstance, 'mounted');
+        }
+    }
+    hook.destroy = function(vnode: VNode) {           // 组件销毁时执行
+        const componentInstance = vnode.componentInstance;
+        if (componentInstance && !componentInstance._isDestroyed) {
+            componentInstance._destroy();
         }
     }
     data.hook = hook

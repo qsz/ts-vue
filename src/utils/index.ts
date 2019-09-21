@@ -49,3 +49,17 @@ export function nextTick(cb: Function) {
     timerFunc()
   }
 }
+
+/**
+ * 删除数组中的某一元素
+ * @param arr 
+ * @param item 
+ */
+export function remove<T> (arr: T[], item: T) {
+  if (arr.length) {
+    const index = arr.indexOf(item);
+    if (index > -1) {
+      return arr.splice(index, 1)
+    }
+  }
+}

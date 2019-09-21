@@ -1,6 +1,6 @@
 import Dep, { pushTarget, popTarget } from './dep'
 import Tsue from '../instance'
-import { nextTick } from '../utils'
+import { nextTick, remove } from '../utils'
 import callHook from '../instance/lifecycle'
 
 let wid = 0
@@ -35,6 +35,8 @@ export default class Watcher {
         } else {
             this.user = this.lazy = this.sync = false
         }
+        vm._watchers.push(this);
+
         this.dirty = this.lazy 
         if(typeof expOrFn === 'function') {
             this.getter = expOrFn // 实例化watcher的时候执行的方法
@@ -108,6 +110,15 @@ export default class Watcher {
         this.value = this.get()
         this.dirty = false
     }
+
+    // 删除watcher在Tsue实例和Dep中的依赖
+    teardown() {
+        remove<Watcher>(this.vm._watchers, this);
+        let i = this.deps.length
+        while (i--) {
+            this.deps[i].removeSub(this)
+        }
+    }
 }
 
 const queue: Watcher[] = []
@@ -156,7 +167,7 @@ function flushQueue() {
     while (i--) {
         const watcher = queue[i]
         const vm = watcher.vm
-        if (vm._isMounted) {
+        if (vm._isMounted && !vm._isDestroyed) {
             // updated 生命周期
             callHook(vm, 'updated')
         }

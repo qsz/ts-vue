@@ -5,7 +5,7 @@ import patch from '../vdom/patch'
 import { proxy, observe, defineReactive, Observer } from '../observer'
 import Watcher from '../observer/watcher'
 import Dep from '../observer/dep'
-import { noop, nextTick } from '../utils'
+import { noop, nextTick, remove } from '../utils'
 import callHook from './lifecycle'
 
 let vid = 0
@@ -23,8 +23,12 @@ export default class Tsue{
     _el: string | Node | undefined;
     _vnode: VNode | undefined;        // 实例vnode
     $parentVnode: VNode | undefined;  // 父vnode
+    _parent: Tsue | undefined;        // 父Tsue实例
+    _childrens: Tsue[] = [];          // 子Tsue实例
     _data: any;
     _isMounted: boolean = false;      // 是否已经挂载到真实DOM上  
+    _isDestroyed: boolean = false;    // 是否已经销毁
+    _watchers: Watcher[] = [];        // 关联的观察者
 
     constructor(options: VmOptions & ComponentOptions<Tsue>) {
         this._vid = vid++
@@ -35,7 +39,7 @@ export default class Tsue{
      */
     _init(options: VmOptions & ComponentOptions<Tsue>){
         if(options && options._isComponent) { 
-            // 如果是组件
+            // 如果是组件实例
             this._options = Object.create(this.constructor.options); // 组件传入的options
             this._options.parent = options.parent;
             this._options.parentVnode = options.parentVnode;
@@ -43,6 +47,18 @@ export default class Tsue{
             this._options = this._mergeOptions(options);
         }
         this._self = this;
+
+        let parent: Tsue | undefined;
+        if(options.parent) {
+            parent = options.parent
+            while (parent._parent) {  // 遍历到最外层父实例
+                parent = parent._parent;
+            }
+            parent._childrens.push(this)
+
+        }
+        this._parent = parent;
+
         callHook(this, 'beforeCreate')
         this._initState()
         callHook(this, 'created')
@@ -61,7 +77,7 @@ export default class Tsue{
         // Watcher实例化的时候就会执行 updateComponent
         const wacther = new Watcher(this, updateComponent, noop, {
             before() {
-                if (vm._isMounted) {
+                if (vm._isMounted && !vm._isDestroyed) {
                     // beforeUpdate 生命周期
                     callHook(vm, 'beforeUpdate')
                 }
@@ -73,10 +89,28 @@ export default class Tsue{
             callHook(this, 'mounted')
         }
     }
+    // 节点销毁时执行
+    _destroy() {
+        // beforeDestroy 生命周期
+        callHook(this, 'beforeDestroy');
+
+        // 删除watcher订阅
+        let i = this._watchers.length;
+        while (i--) {
+            this._watchers[i].teardown();
+        }
+        // 从父实例中删除
+        if(this._parent) {
+            remove<Tsue>(this._parent._childrens, this);
+        }
+
+        this._isDestroyed = true;
+        // destroyed 生命周期
+        callHook(this, 'destroyed');
+    }
     // 把 VNode 渲染成真实的 DOM, 在 首次渲染、组件渲染 或 数据更新 会调用
     _update(vnode: VNode){ 
         const prevVnode = this._vnode;
-        this._vnode = vnode;
         if(prevVnode) {  
             // 数据更新  
             this._el = patch(prevVnode, vnode)
@@ -89,11 +123,13 @@ export default class Tsue{
                 this._el = patch(this._el, vnode) 
             }   
         }
+        this._vnode = vnode;
     }
     // 生成vnode
     _render(): VNode{
         const render = this._options.render;
-        const parentVnode = this._options.parentVnode
+        const parentVnode = this._options.parentVnode;
+        this._parent = this._options.parent;
         this.$parentVnode = parentVnode;
         if(!render) {
             return {}

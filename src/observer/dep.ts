@@ -1,4 +1,5 @@
 import Watcher from './watcher'
+import { remove } from '../utils'
 
 let uid = 0
 // 发布者，订阅收集
@@ -31,14 +32,6 @@ export default class Dep {
 
     removeSub(sub: Watcher) {
         // 删除subs数组中某一项 
-        function remove (arr: Watcher[], item: Watcher) {
-          if (arr.length) {
-            const index = arr.indexOf(item)
-            if (index > -1) {
-              return arr.splice(index, 1)
-            }
-          }
-        }
         remove(this.subs, sub)
     }
 
