@@ -1,4 +1,5 @@
 import Tsue from '../src/instance/index';
+
 function Hello1() {
     return {
         name: 'Hello1',
@@ -51,7 +52,12 @@ function Welcome () {
                     c: 33,
                     d: 44
                 },
-                css: 'color:red; font-size: 25px'
+                css: 'color:red; font-size: 25px',
+                arr: [
+                    {val: 'a', key: 'A'},
+                    {val: 'b', key: 'B'},
+                    {val: 'c', key: 'C'}
+                ]
             }
         },
         methods: {
@@ -66,6 +72,9 @@ function Welcome () {
                     b: 22,
                     c: 33
                 }
+            },
+            clickHandler3: function() {
+                this.arr.splice(0, 1, {val: 'd', key: 'D'})
             }
         },
         
@@ -74,14 +83,22 @@ function Welcome () {
                 <div>
                     <button onClick={this.clickHandler1}>click to change age</button> 
                     <button onClick={this.clickHandler2}>click to change list</button> 
+                    <button onClick={this.clickHandler3}>click to change array</button> 
 
                     <div style={this.css} >age: {this.age}</div>  
                 
-
+                    <h3>obj</h3>
                     {
                         Object.keys(this.list).map((key) => {
                             return <li key={key}>{this.list[key]}</li>
                         })
+                    }
+
+                    <h3>array</h3>
+                    {
+                       this.arr.map((item) => {
+                        return <li key={item.key}>{item.val}</li>
+                       }) 
                     }
                 </div>
             );
@@ -89,6 +106,7 @@ function Welcome () {
     }
     
 }
+
 
 const tsue = new Tsue({
     el: '#app',
@@ -107,5 +125,6 @@ const tsue = new Tsue({
       )
     }
 })
+
 
 

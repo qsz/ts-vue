@@ -1,6 +1,7 @@
 import Tsue from '../instance'
 import Dep from './dep'
 import { def, isObject } from '../utils'
+import arrayMethods from './array'
 
 /**
  * 用于生成observer实例, observer会把value变成响应式，返回 Observer 实例
@@ -18,6 +19,9 @@ export function observe(value: any): Observer | void{
     return ob;
 }
 
+export interface ObserveValue {
+    __ob__ ?: Observer
+}
 
 /**
  * 遍历value调用defineReactive，把value变成响应式
@@ -26,10 +30,16 @@ export class Observer {
     value: any;
     dep: Dep;
 
-    constructor(value: any) {
+    constructor(value: ObserveValue) {
         this.dep = new Dep()        // 订阅收集器
         def(value, '__ob__', this); // 给 value 增加一个 __ob__ 值，指向 Observer 实例，表示value是响应式对象
-        this.walk(value)
+        if(Array.isArray(value)) {  // 判断value是否是数组
+            Object.setPrototypeOf(value, arrayMethods);  // value.__proto__ = arrayMethods
+            this.observeArray(value)
+        } else {
+            this.walk(value)
+        }
+        
     }
 
     // 遍历obj的属性， 将每个属性变成响应式
@@ -37,6 +47,13 @@ export class Observer {
         Object.keys(obj).forEach((key) => {
             defineReactive(obj, key)
         })
+    }
+
+    // 遍历数组，把数组中的每个子项变成响应式。注意：并不是把数组变成响应式
+    observeArray(arr: Array<any>) {
+        for (let i = 0; i < arr.length; i++) {
+            observe(arr[i])
+        }
     }
 } 
 

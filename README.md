@@ -2,7 +2,6 @@
 
 ## 实现的功能
 * typescript-simple-vue 简称 Tsue 
-* 由于是为了梳理整个流程，所以暂不考虑 data是数组的情况，数组类型实现和对象类型原理一样，只是多些判断而已
 * 实现的功能如下
     * 虚拟dom
     * 响应式、计算属性computed 和 侦听器watch
